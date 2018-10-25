@@ -4,7 +4,7 @@ var data = {
 }
 observe(data)
 
-// data.name  
+// data.name
 // data.name = "Hello"
 // data.list[0] = 100
 // data.list
