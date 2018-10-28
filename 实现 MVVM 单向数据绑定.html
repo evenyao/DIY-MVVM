@@ -113,7 +113,7 @@ class mvvm {
   compile(){
     this.traverse(this.$el)
   }
-  // 递归遍历情况
+  // 递归遍历情况 DOM nodeType 属性
   traverse(node){
     if(node.nodeType === 1){
       node.childNodes.forEach(childNode=>{
