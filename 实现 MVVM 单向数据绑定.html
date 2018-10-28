@@ -22,20 +22,20 @@ function observe(data) {
       configurable: true,
       get: function() {
         console.log(`get ${key}: ${val}`)
-        
+
         /*** 如果 currentObserver 出现，将观察者订阅到该主题  ***/
         if(currentObserver){
           console.log('has currentObserver')
           currentObserver.subscribeTo(subject)
         }
-        
+
         return val
       },
       set: function(newVal) {
         val = newVal
         console.log('start notify...')
         //通知订阅者 执行 notify()
-        subject.notify()  
+        subject.notify()
       }
     })
     if(typeof val === 'object'){
@@ -63,18 +63,18 @@ class Subject {
   }
   notify() {
     this.observers.forEach(observer => {
-      observer.update() 
+      observer.update()
     })
   }
 }
 
 // 观察者
 class Observer{
-  constructor(vm, key, cb) {
+  constructor(vm, key, callback) {
     this.subjects = {}  // 订阅主题
     this.vm = vm   // mvvm 对象
     this.key = key  // data 的属性
-    this.cb = cb  //callback
+    this.callback = callback  //callback
     this.value = this.getValue()
   }
   // 更新值
@@ -84,7 +84,7 @@ class Observer{
     // 彻底更新时，才会做改变
     if(value !== oldVal) {
       this.value = value
-      this.cb.bind(this.vm)(value, oldVal)
+      this.callback.bind(this.vm)(value, oldVal)
     }
   }
   subscribeTo(subject) {
@@ -94,7 +94,7 @@ class Observer{
        this.subjects[subject.id] = subject
     }
   }
-  / *** 观察者变为全局 currentObserver *** /
+  /*** 观察者变为全局 currentObserver ***/
   getValue(){
     currentObserver = this
     let value = this.vm.$data[this.key]    //相当于new Observer 之后会调用 observe 中的 get，然后执行其中的 if(currentObserver)
@@ -135,10 +135,10 @@ class mvvm {
     let reg = /{{(.+?)}}/g   //正则取双大括号里面的内容
     let match
     while(match = reg.exec(node.nodeValue)){
-      let raw = match[0]  // 原始 
+      let raw = match[0]  // 原始
       let key = match[1].trim()  // 插值表达式内的值
       node.nodeValue = node.nodeValue.replace(raw, this.$data[key])   // 替换大括号插值表达式里的内容为 data里面的数据
-      
+
       // Observer 方法 创建观察者
       new Observer(this, key, function(val, oldVal){
         node.nodeValue = node.nodeValue.replace(oldVal, val)
