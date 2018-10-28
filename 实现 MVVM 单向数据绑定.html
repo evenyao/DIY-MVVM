@@ -16,7 +16,7 @@ function observe(data) {
   if(!data || typeof data !== 'object') return
   for(var key in data) {
     let val = data[key]
-    let subject = new Subject()
+    let subject = new Subject()   //遍历属性的过程中，对于每一个属性 new Subject()
     Object.defineProperty(data, key, {
       enumerable: true,
       configurable: true,
