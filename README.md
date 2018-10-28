@@ -9,3 +9,6 @@
 
 ## 单向数据绑定
 [实现 MVVM 单向数据绑定](//github.com/evenyao/DIY-MVVM/blob/master/%E5%AE%9E%E7%8E%B0%20MVVM%20%E5%8D%95%E5%90%91%E6%95%B0%E6%8D%AE%E7%BB%91%E5%AE%9A.html)
+
+## 双向数据绑定
+[实现 MVVM 双向数据绑定](//github.com/evenyao/MVVM/blob/master/%E5%AE%9E%E7%8E%B0%20MVVM%20%E5%8F%8C%E5%90%91%E6%95%B0%E6%8D%AE%E7%BB%91%E5%AE%9A.html)
