@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>MVVM 双向绑定</title>
+</head>
+<body>
+
+<div id="app" >
+  <input v-model="name" type="text">
+  <h1>{{name}}  {{number}}</h1>
+</div>
+
+<script>
+// 观察数据
+function observe(data) {
+  if(!data || typeof data !== 'object') return
+  for(var key in data) {
+    let val = data[key]
+    let subject = new Subject()   //遍历属性的过程中，对于每一个属性 new Subject()
+    Object.defineProperty(data, key, {
+      enumerable: true,
+      configurable: true,
+      get: function() {
+        console.log(`get ${key}: ${val}`)
+
+        /*** 如果 currentObserver 出现，将观察者订阅到该主题  ***/
+        if(currentObserver){
+          console.log('has currentObserver')
+          currentObserver.subscribeTo(subject)
+        }
+
+        return val
+      },
+      set: function(newVal) {
+        val = newVal
+        console.log('start notify...')
+        //通知订阅者 执行 notify()
+        subject.notify()
+      }
+    })
+    if(typeof val === 'object'){
+      observe(val)
+    }
+  }
+}
+
+let id = 0
+let currentObserver = null
+
+class Subject {
+  constructor() {
+    this.id = id++
+    this.observers = []
+  }
+  addObserver(observer) {
+    this.observers.push(observer)
+  }
+  removeObserver(observer) {
+    var index = this.observers.indexOf(observer)
+    if(index > -1){
+      this.observers.splice(index, 1)
+    }
+  }
+  notify() {
+    this.observers.forEach(observer => {
+      observer.update()
+    })
+  }
+}
+
+// 观察者
+class Observer{
+  constructor(vm, key, callback) {
+    this.subjects = {}  // 订阅主题
+    this.vm = vm   // mvvm 对象
+    this.key = key  // data 的属性
+    this.callback = callback  //callback
+    this.value = this.getValue()
+  }
+  // 更新值
+  update(){
+    let oldVal = this.value
+    let value = this.getValue()
+    // 彻底更新时，才会做改变
+    if(value !== oldVal) {
+      this.value = value
+      this.callback.bind(this.vm)(value, oldVal)
+    }
+  }
+  subscribeTo(subject) {
+    if(!this.subjects[subject.id]){
+      console.log('subscribeTo.. ', subject)
+       subject.addObserver(this)
+       this.subjects[subject.id] = subject
+    }
+  }
+  /*** 观察者变为全局 currentObserver ***/
+  getValue(){
+    currentObserver = this
+    let value = this.vm.$data[this.key]    //相当于new Observer 之后会调用 observe 中的 get，然后执行其中的 if(currentObserver)
+    currentObserver = null
+    return value
+  }
+}
+
+
+
+class mvvm {
+  constructor(opts) {
+    this.init(opts)  //初始化
+    observe(this.$data)  //监听
+    new Compile(this) // 遍历模板 重新抽离出来一个对象
+  }
+  init(opts){
+    this.$el = document.querySelector(opts.el)    //获取当前元素 el: 下的id
+    this.$data = opts.data
+  }
+}
+
+class Compile {
+  constructor(vm) {
+    this.vm = vm
+    this.node = vm.$el
+    this.compile()
+  }
+  // 解析 el 模板
+  compile(){
+    this.traverse(this.node)
+  }
+  // 递归遍历情况 DOM nodeType 属性
+  traverse(node){
+    if(node.nodeType === 1){
+      this.compileNode(node)  // 解析节点上的 v-bind 属性
+      node.childNodes.forEach(childNode => {
+        this.traverse(childNode)
+      })
+    }else if(node.nodeType === 3){ //文本
+      this.compileText(node)   // 渲染
+    }
+  }
+  // 渲染
+  compileText(node){
+    let reg = /{{(.+?)}}/g   //正则取双大括号里面的内容
+    let match
+    console.log(node)
+    while(match = reg.exec(node.nodeValue)){
+      let raw = match[0]  // 原始
+      let key = match[1].trim()  // 插值表达式内的值
+      node.nodeValue = node.nodeValue.replace(raw, this.vm.$data[key])   // 替换大括号插值表达式里的内容为 data里面的数据
+
+      // Observer 方法 创建观察者
+      new Observer(this.vm, key, function(val, oldVal){
+        node.nodeValue = node.nodeValue.replace(oldVal, val)
+      })
+    }
+  }
+
+  //处理 v-model 指令
+  compileNode(node){
+    let attrs = [...node.attributes]  // 类数组对象转换成数组，也可用其他方法
+    attrs.forEach(attr => {
+      // attr 是个对象，attr.name 是属性的名字如 v-model， attr.value 是对应的值，如 name
+      if(this.isDirective(attr.name)){
+        let key = attr.value       // attr.value === 'name'
+        node.value = this.vm.$data[key]
+        new Observer(this.vm, key, function(newVal){
+          node.value = newVal
+        })
+        node.oninput = (e) => {
+          this.vm.$data[key] = e.target.value  // 因为是箭头函数，所以这里的 this 是 compile 对象
+        }
+      }
+    })
+  }
+  // 判断属性名是否是指令
+  isDirective(attrName){
+     return attrName === 'v-model'
+  }
+
+}
+
+let vm = new mvvm({
+  el: '#app',
+  data: {
+    name: 'hello world',
+    number: 0
+  }
+})
+
+setInterval(function(){
+  vm.$data.number++
+}, 1000)
+
+
+</script>
+</body>
+</html>
