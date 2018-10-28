@@ -67,9 +67,9 @@ class Subject {
 // 观察者
 class Observer{
   constructor(vm, key, cb) {
-    this.subjects = {}
-    this.vm = vm
-    this.key = key
+    this.subjects = {}  // 订阅主题
+    this.vm = vm   // mvvm 对象
+    this.key = key  // data 的属性
     this.cb = cb  //callback
     this.value = this.getValue()
   }
@@ -128,9 +128,11 @@ class mvvm {
     let reg = /{{(.+?)}}/g   //正则取双大括号里面的内容
     let match
     while(match = reg.exec(node.nodeValue)){
-      let raw = match[0]
-      let key = match[1].trim()
-      node.nodeValue = node.nodeValue.replace(raw, this.$data[key])
+      let raw = match[0]  // 原始 
+      let key = match[1].trim()  // 插值表达式内的值
+      node.nodeValue = node.nodeValue.replace(raw, this.$data[key])   // 替换大括号插值表达式里的内容为 data里面的数据
+      
+      // Observer 方法
       new Observer(this, key, function(val, oldVal){
         node.nodeValue = node.nodeValue.replace(oldVal, val)
       })
