@@ -120,9 +120,10 @@ class mvvm {
         this.traverse(childNode)
       })
     }else if(node.nodeType === 3){ //文本
-      this.renderText(node)
+      this.renderText(node)   // 渲染
     }
   }
+  // 渲染
   renderText(node){
     let reg = /{{(.+?)}}/g   //正则取双大括号里面的内容
     let match
